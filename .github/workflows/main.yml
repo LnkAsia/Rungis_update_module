@@ -1,0 +1,49 @@
+name: Build and Deploy on GKE
+
+on:
+  push:
+    branches: [ "development" ]
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GAR_LOCATION: europe-west1
+  GKE_CLUSTER: odoodevelopment   # TODO: update to cluster name
+  GKE_ZONE: europe-west1-d   # TODO: update to cluster zone
+  DEPLOYMENT_NAME: odoodevelopment # TODO: update to deployment name
+  IMAGE: odoodevelopment
+
+jobs:
+  setup-build-publish-deploy:
+    name: Setup, Build, Publish, and Deploy
+    runs-on: ubuntu-latest
+    environment: odoodevelopment
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    # Alternative option of authentication via credentials json
+    - id: 'auth'
+      uses: 'google-github-actions/auth@v0'
+      with:
+       credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+
+    - name: Docker configuration
+      run: |-
+        gcloud --quiet auth configure-docker
+        
+    # Get the GKE credentials so we can deploy to the cluster
+    - name: Set up GKE credentials
+      uses: google-github-actions/get-gke-credentials@v0
+      with:
+        cluster_name: ${{ env.GKE_CLUSTER }}
+        location: ${{ env.GKE_ZONE }}
+        
+    - name: Deploy
+      run: |-
+         kubectl rollout restart deployment $DEPLOYMENT_NAME
+         kubectl exec deploy/odoodevelopment -- /bin/bash  -c odoo --db_host  10.132.49.9 --db_port 5432 -d FSD-Rungis-Development -u metro_rungis_report --db_user odoo --db_password Lnk@Rungis@Metro@1309
+  
+    - name: Restart_the_service
+      run: |-
+        kubectl rollout restart deployment $DEPLOYMENT_NAME
