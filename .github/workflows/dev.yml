@@ -1,4 +1,4 @@
-name: Dev
+name: Module update in Dev 
 
 on:
   workflow_dispatch:
