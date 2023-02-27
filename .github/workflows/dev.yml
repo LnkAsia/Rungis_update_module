@@ -1,4 +1,4 @@
-name: Build and Deploy on GKE
+name: Dev
 
 on:
   workflow_dispatch:
